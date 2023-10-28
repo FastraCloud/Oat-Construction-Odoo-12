@@ -18,3 +18,7 @@ access_fastra_preliminaries,access.fastra.preliminaries,model_fastra_preliminari
 access_fastra_preliminaries_line,access.fastra.preliminaries.line,model_fastra_preliminaries_line,,1,1,1,1
 access_fastra_preliminaries_summary,access.fastra.preliminaries.summary,model_fastra_preliminaries_summary,,1,1,1,1
 access_fastra_project_budget_measure_unit,access.fastra.project.budget.measure.unit,model_fastra_project_budget_measure_unit,,1,1,1,1
+access_fastra_project_budget_cost_line,Access.fastra.project.budget.cost.line,model_fastra_project_budget_cost_line,,1,1,1,1
+access_cost_code_dictionary,Access.cost.code.dictionary,model_cost_code_dictionary,,1,1,1,1
+access_subcategory_subcategory,Access.subcategory.subcategory,model_subcategory_subcategory,,1,1,1,1
+access_prelims_category,Access.prelims.category,model_prelims_category,,1,1,1,1

@@ -30,8 +30,7 @@ class AlmMultiLocation(models.Model):
 
     @api.multi
     def _get_destination_location(self):
-        super(AlmMultiLocation,
-              self)._get_destination_location()  # to overide the _get_destination_location in the purchase.order module
+        super(AlmMultiLocation, self)._get_destination_location()  # to overide the _get_destination_location in the purchase.order module
 
         self.ensure_one()
         if self.account_analytic_id.location:
@@ -47,7 +46,8 @@ class StoreKeeperUsers(models.Model):
     branch_manager = fields.Many2one('res.users', string="Project Manager")
     branch_accountant = fields.Many2one('res.users', string="Branch Accountant")
 
-class ButtonModification(models.Model):
+
+class StockPicking(models.Model):
     _inherit = 'stock.picking'
 
     def get_current_user_id(self):
@@ -121,6 +121,41 @@ class ButtonModification(models.Model):
     dest_store = fields.Boolean(compute='_check_dest_location')
     current_manager = fields.Boolean(compute='_check_manager')
     state = fields.Selection(selection_add=[('released', 'Released')])
+
+    @api.multi
+    def do_new_transfer(self):
+        print(self.origin, "origin is here")
+        if self.origin:
+            internal_transfer_obj = []
+            if 'IR' in self.origin:
+                internal_transfer_obj = self.env['internal.transfer.request'].search([('name', '=', self.origin)])[0]
+                print(internal_transfer_obj)
+            if internal_transfer_obj:
+                internal_transfer_obj.write({'state': 'done'})
+        return super(StockPicking, self).do_new_transfer()
+
+    @api.model
+    def get_current_location(self):
+        for rec in self:
+            rec.location_id = self.env['stock.location'].search([('id', '=', 18)]).id
+            rec.location_dest_id = self.env['stock.location'].search([('id', '=', 18)]).id
+
+    @api.multi
+    def action_done(self):
+        res = super(StockPicking, self).action_done()
+        if self.picking_type_code == 'internal':
+            project_cost_obj = self.env['fastra.project.budget'].sudo()
+            for line in self.move_ids_without_package:
+                project_cost_id = project_cost_obj.search([('analytic_account_id', '=', line.project_analytic_account_id.id)], order="id desc", limit=1)
+                if project_cost_id:
+                    project_cost_id.write({'cost_line_ids': [(0, 0, {'prelims_category_id': line.prelims_category_id and line.prelims_category_id.id or False,
+                                                                     'project_element_category_id': line.project_element_category_id and line.project_element_category_id.id or False,
+                                                                     'subcategory_id': line.subcategory_id and line.subcategory_id.id or False,
+                                                                     'actual_material_qty': line.quantity_done,
+                                                                     'actual_material_rate': line.product_id.standard_price,
+                                                                     'actual_material_amount': line.quantity_done * line.product_id.standard_price,
+                                                                     })]})
+        return res
 
 
 class InternalTransferRequest(models.Model):
@@ -271,12 +306,6 @@ class InternalTransferRequest(models.Model):
         compute='_compute_line_count',
         readonly=True
     )
-
-    """@api.multi
-    def _compute_approvers(self):
-	managers = self.env.ref['stock.group_stock_manager']
-	print(managers.users)
-	return managers.users"""
 
     @api.multi
     @api.depends(
@@ -589,32 +618,6 @@ class TransferRequestLine(models.Model):
         return res
 
 
-class StockPickinInherited(models.Model):
-    _inherit = "stock.picking"
-
-    # location_id = fields.Many2one()
-    # location_id = fields.Many2one()
-
-    @api.multi
-    def do_new_transfer(self):
-        print(self.origin, "origin is here")
-        if self.origin:
-            internal_transfer_obj = []
-            if 'IR' in self.origin:
-                internal_transfer_obj = self.env['internal.transfer.request'].search([('name', '=', self.origin)])[0]
-                print(internal_transfer_obj)
-            if internal_transfer_obj:
-                internal_transfer_obj.write({'state': 'done'})
-        return super(StockPickinInherited, self).do_new_transfer()
-
-    @api.model
-    def get_current_location(self):
-        for rec in self:
-
-            rec.location_id = self.env['stock.location'].search([('id', '=', 18)]).id
-            rec.location_dest_id = self.env['stock.location'].search([('id', '=', 18)]).id
-
-
 class AccountVoucher(models.Model):
     _inherit = 'account.voucher'
 
@@ -647,3 +650,88 @@ class AccountVoucherLine(models.Model):
         if vals.get('value', False) and vals['value'].get('name'):
             vals['value']['name'] = ''
         return vals
+
+
+class StockMove(models.Model):
+    _inherit = 'stock.move'
+
+    project_analytic_account_id = fields.Many2one('account.analytic.account', string="Project")
+    prelims_category_id = fields.Many2one('prelims.category', string="Cost Code")
+    project_element_category_id = fields.Many2one('project.element.category', string="Category")
+    subcategory_id = fields.Many2one('subcategory.subcategory', string="Sub-Category")
+
+    @api.onchange('prelims_category_id')
+    def onchange_cost_code(self):
+        if self.prelims_category_id:
+            cost_code_id = self.env['cost.code.dictionary'].search([('prelims_category_id', '=', self.prelims_category_id.id)], order="id desc", limit=1)
+            if cost_code_id:
+                self.project_element_category_id = cost_code_id.project_element_category_id and cost_code_id.project_element_category_id.id or False
+                self.subcategory_id = cost_code_id.subcategory_id and cost_code_id.subcategory_id.id or False
+        else:
+            self.project_element_category_id = False
+            self.subcategory_id = False
+
+
+class AccountInvoice(models.Model):
+    _inherit = "account.invoice"
+
+    @api.multi
+    def action_invoice_open(self):
+        res = super(AccountInvoice, self).action_invoice_open()
+        project_cost_obj = self.env['fastra.project.budget'].sudo()
+        for line in self.invoice_line_ids:
+            project_cost_id = project_cost_obj.search([('analytic_account_id', '=', line.account_analytic_id.id)], order="id desc", limit=1)
+            if project_cost_id:
+                cost_tracking_id = project_cost_id.cost_line_ids.filtered(
+                    lambda ct: ct.prelims_category_id.id == line.prelims_category_id.id)
+                if cost_tracking_id:
+                    cost_tracking_id.write({'actual_subcontractor_amount': cost_tracking_id[0].actual_subcontractor_amount + line.price_subtotal})
+                else:
+                    project_cost_id.write({'cost_line_ids': [(0, 0, {
+                        'actual_subcontractor_amount': line.price_subtotal,
+                        'prelims_category_id': line.prelims_category_id and line.prelims_category_id.id or False,
+                        'project_element_category_id': line.category and line.category.id or False,
+                        'subcategory_id': line.subcategory_id and line.subcategory_id.id or False,
+                    })]})
+        return res
+
+
+class AccountInvoiceLine(models.Model):
+    _inherit = "account.invoice.line"
+
+    prelims_category_id = fields.Many2one('prelims.category', string="Cost Code")
+    category = fields.Many2one('project.element.category', string='Category')
+    subcategory_id = fields.Many2one('subcategory.subcategory', string='Subcategory')
+
+
+class AccountMove(models.Model):
+    _inherit = "account.move"
+
+    @api.multi
+    def action_post(self):
+        res = super(AccountMove, self).action_post()
+        project_cost_obj = self.env['fastra.project.budget'].sudo()
+        for line in self.line_ids:
+            amount = line.debit if line.debit else line.credit
+            project_cost_id = project_cost_obj.search([('analytic_account_id', '=', line.analytic_account_id.id)], order="id desc", limit=1)
+            if project_cost_id:
+                cost_tracking_id = project_cost_id.cost_line_ids.filtered(lambda ct: ct.prelims_category_id.id == line.prelims_category_id.id)
+                if cost_tracking_id:
+                    cost_tracking_id.write({'actual_labor_amount': cost_tracking_id[0].actual_labor_amount + amount})
+                else:
+                    project_cost_id.write({'cost_line_ids': [(0, 0, {
+                        'actual_labor_amount': amount,
+                        'prelims_category_id': line.prelims_category_id and line.prelims_category_id.id or False,
+                        'project_element_category_id': line.category and line.category.id or False,
+                        'subcategory_id': line.subcategory_id and line.subcategory_id.id or False,
+                    })]})
+        return res
+
+
+class AccountMoveLine(models.Model):
+    _inherit = "account.move.line"
+
+    prelims_category_id = fields.Many2one('prelims.category', string="Cost Code")
+    category = fields.Many2one('project.element.category', string='Category')
+    subcategory_id = fields.Many2one('subcategory.subcategory', string='Subcategory')
+

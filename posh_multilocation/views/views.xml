@@ -14,6 +14,11 @@
                     <xpath expr="//field[@name='tax_line_ids']/tree/field[@name='account_analytic_id']" position="attributes">
                         <attribute name="string">Project</attribute>
                     </xpath>
+                    <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='name']" position="after">
+                        <field name="prelims_category_id"/>
+                        <field name="category"/>
+                        <field name="subcategory_id"/>
+                    </xpath>
                 </field>
         </record>
 
@@ -132,33 +137,43 @@
         <record id="view_stock_picking_form_inherit" model="ir.ui.view">
             <field name="name">stock picking.form.inherit</field>
             <field name="model">stock.picking</field>
-            <field name="inherit_id" ref="stock.view_picking_form" />
+            <field name="inherit_id" ref="stock.view_picking_form"/>
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='name']" position="after">
-                    <field name="dest_store" invisible="1" />
-                    <field name="source_store" invisible="1" />
-                    <field name="current_manager" invisible="1" />
+                    <field name="dest_store" invisible="1"/>
+                    <field name="source_store" invisible="1"/>
+                    <field name="current_manager" invisible="1"/>
                 </xpath>
                 <xpath expr="//button[@name='button_validate']" position="after">
-                    <button name="do_released" string="Release"  type="object"  class="oe_highlight" attrs="{'invisible': [('state','not in',['done'])]}"/>
-                    <button name="do_new_transfer" string="Receive Products" groups="alm_multi_location.group_store_keeper" type="object" class="oe_highlight" attrs="{'invisible': ['|',('dest_store','=',False),('state','not in',['assigned','released'])]}" />
+                    <button name="do_released" string="Release" type="object" class="oe_highlight"
+                            attrs="{'invisible': [('state','not in',['done'])]}"/>
+                    <button name="do_new_transfer" string="Receive Products"
+                            groups="alm_multi_location.group_store_keeper" type="object" class="oe_highlight"
+                            attrs="{'invisible': ['|',('dest_store','=',False),('state','not in',['assigned','released'])]}"/>
                     <!-- <button name="do_new_transfer" string="Validate" states="assigned,released" groups="stock.group_stock_manager" type="object" class="oe_highlight" /> -->
                 </xpath>
                 <xpath expr="//button[@name='button_validate']" position="attributes">
-                <attribute name="string">Approve</attribute>
-            </xpath>
-                            <xpath expr="//button[@class='o_btn_validate']" position="attributes">
-                <attribute name="string">Approve</attribute>
-            </xpath>
-               <xpath expr="//button[@name='action_cancel']" position="attributes">
-                <attribute name="string">Disapprove</attribute>
-            </xpath>
-              <xpath expr="//field[@name='quantity_done']" position="attributes">
-                <attribute name="attrs">{'readonly': False}</attribute>
-            </xpath>
-           <xpath expr="//field[@name='qty_done']" position="attributes">
-                <attribute name="attrs">{'readonly': False}</attribute>
-           </xpath>
+                    <attribute name="string">Approve</attribute>
+                </xpath>
+                <xpath expr="//button[@class='o_btn_validate']" position="attributes">
+                    <attribute name="string">Approve</attribute>
+                </xpath>
+                <xpath expr="//button[@name='action_cancel']" position="attributes">
+                    <attribute name="string">Disapprove</attribute>
+                </xpath>
+                <xpath expr="//field[@name='quantity_done']" position="attributes">
+                    <attribute name="attrs">{'readonly': False}</attribute>
+                </xpath>
+                <xpath expr="//field[@name='qty_done']" position="attributes">
+                    <attribute name="attrs">{'readonly': False}</attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='move_ids_without_package']/tree/field[@name='product_id']" position="after">
+                    <field name="project_analytic_account_id" attrs="{'column_invisible': [('parent.picking_type_code', '!=', 'internal')]}"/>
+                    <field name="prelims_category_id" attrs="{'column_invisible': [('parent.picking_type_code', '!=', 'internal')]}"/>
+                    <field name="project_element_category_id" attrs="{'column_invisible': [('parent.picking_type_code', '!=', 'internal')]}"/>
+                    <field name="subcategory_id" attrs="{'column_invisible': [('parent.picking_type_code', '!=', 'internal')]}"/>
+                </xpath>
             </field>
         </record>
 
@@ -511,6 +526,11 @@
                 <xpath expr="//field[@name='line_ids']/form//field[@name='analytic_account_id']" position="attributes">
                     <attribute name="string">Project</attribute>
                 </xpath>
+                <xpath expr="//field[@name='line_ids']/tree/field[@name='name']" position="after">
+                    <field name="prelims_category_id"/>
+                    <field name="category"/>
+                    <field name="subcategory_id"/>
+                </xpath>
             </field>
         </record>
 
@@ -560,6 +580,19 @@
                 </xpath>
                 <xpath expr="//button[@class='oe_stat_button']/field[@name='contracts_count']" position="attributes">
                     <attribute name="string">Project</attribute>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="view_consumption_cost_entry_form_form_inherit_code" model="ir.ui.view">
+            <field name="name">view.consumption.cost.entry.form.inherit.code</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="od_material_consumption.consumption_cost_entry_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='line_ids']/tree/field[@name='name']" position="after">
+                    <field name="prelims_category_id"/>
+                    <field name="category"/>
+                    <field name="subcategory_id"/>
                 </xpath>
             </field>
         </record>

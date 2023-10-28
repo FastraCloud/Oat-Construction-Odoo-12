@@ -20,7 +20,8 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base','stock','purchase','analytic', 'account', 'account_voucher'],
+    'depends': ['base','stock','purchase','analytic', 'account', 'account_voucher',
+                'fastra_project_budget', 'od_material_consumption'],
 
     # always loaded
     'data': [

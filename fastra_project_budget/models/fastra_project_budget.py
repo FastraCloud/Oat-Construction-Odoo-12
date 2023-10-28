@@ -10,9 +10,17 @@ class FastraProjectBudget(models.Model):
     manager_id = fields.Many2one('hr.employee', string="Project Manager")
     budget_cost_amount = fields.Float("Budget Cost", compute="get_budget_cost_amount")
     actual_cost_amount = fields.Float("Actual Cost")
+    net_cost_amount = fields.Float("Net Value", compute="get_net_cost_amount")
     date = fields.Date("Date")
 
     line_ids = fields.One2many("fastra.project.budget.line", "fastra_budget_id", string="Lines")
+    cost_line_ids = fields.One2many("fastra.project.budget.cost.line", "fastra_budget_id", string="Cost Lines")
+
+    @api.multi
+    @api.depends('budget_cost_amount', 'actual_cost_amount')
+    def get_net_cost_amount(self):
+        for rec in self:
+            rec.net_cost_amount = rec.budget_cost_amount - rec.actual_cost_amount
 
     @api.multi
     @api.depends('line_ids')
@@ -34,6 +42,7 @@ class FastraProjectBudgetLine(models.Model):
     analytic_account_id = fields.Many2one('account.analytic.account', string="Project")
     fastra_budget_id = fields.Many2one("fastra.project.budget", string="Project Budget")
     item = fields.Integer("Item")
+    prelims_category_id = fields.Many2one('prelims.category', string="Cost Code")
     category_id = fields.Many2one("fastra.project.budget.line.category", string="Category")
     subcategory_id = fields.Many2one("fastra.project.budget.line.subcategory", string="Subcategory")
     description = fields.Char("Description")
@@ -88,3 +97,50 @@ class FastraProjectBudgetMeasureUnitCategory(models.Model):
     _description = 'Fastra Project Budget Measure Unit'
 
     name = fields.Char("Name")
+
+
+class ProjectBudgetCostLine(models.Model):
+    _name = 'fastra.project.budget.cost.line'
+    _description = 'Fastra Project Budget Cost Line'
+
+    fastra_budget_id = fields.Many2one("fastra.project.budget", string="Project Budget")
+    prelims_category_id = fields.Many2one('prelims.category', string="Cost Code")
+    project_element_category_id = fields.Many2one('project.element.category', string="Category")
+    subcategory_id = fields.Many2one('subcategory.subcategory', string="Sub-Category")
+    description = fields.Char("Description")
+    actual_material_qty = fields.Float("Actual Material Qty")
+    actual_material_rate = fields.Float("Actual Material Rate")
+    actual_material_amount = fields.Float("Actual Material Amount")
+    actual_labor_amount = fields.Float("Actual Labor Amount")
+    actual_subcontractor_amount = fields.Float("Actual Subcontractor Amount")
+    total_actual_cost = fields.Float("Total Actual Cost", compute='get_total_actual_cost')
+    budget_saving = fields.Float("Budget Savings")
+    actual_saving = fields.Float("Actual Saving")
+
+    @api.depends('actual_material_amount', 'actual_labor_amount', 'actual_subcontractor_amount')
+    def get_total_actual_cost(self):
+        for rec in self:
+            rec.total_actual_cost = rec.actual_material_amount + rec.actual_labor_amount + rec.actual_subcontractor_amount
+
+
+class Subcategory(models.Model):
+    _name = 'subcategory.subcategory'
+    _description = 'Subcategory'
+
+    name = fields.Char()
+
+
+class PrelimsCategory(models.Model):
+    _name = 'prelims.category'
+    _description = 'Prelims Categories'
+
+    name = fields.Char(required=True)
+
+
+class CostCodeDictionary(models.Model):
+    _name = 'cost.code.dictionary'
+    _description = 'Cost Code Dictionary'
+
+    prelims_category_id = fields.Many2one('prelims.category', string="Cost Code")
+    project_element_category_id = fields.Many2one('project.element.category', string="Category")
+    subcategory_id = fields.Many2one('subcategory.subcategory', string="Sub-Category")

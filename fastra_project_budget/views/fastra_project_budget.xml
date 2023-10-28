@@ -17,6 +17,7 @@
                             <group>
                                 <field name="budget_cost_amount"/>
                                 <field name="actual_cost_amount"/>
+                                <field name="net_cost_amount"/>
                             </group>
                         </group>
 
@@ -25,6 +26,7 @@
                                 <field name="line_ids" nolable="1">
                                     <tree string="budget line tree" editable="bottom">
                                         <field name="item"/>
+                                        <field name="prelims_category_id"/>
                                         <field name="category_id"/>
                                         <field name="subcategory_id"/>
                                         <field name="description"/>
@@ -38,6 +40,25 @@
                                         <field name="labor_amount"/>
                                         <field name="specialize_worker"/>
                                         <field name="total"/>
+                                    </tree>
+                                </field>
+                            </page>
+
+                            <page string="Cost Tracking" name="cost_tracking">
+                                <field name="cost_line_ids" nolable="1">
+                                    <tree string="Cost line tree" editable="bottom">
+                                        <field name="prelims_category_id"/>
+                                        <field name="project_element_category_id"/>
+                                        <field name="subcategory_id"/>
+                                        <field name="description"/>
+                                        <field name="actual_material_qty"/>
+                                        <field name="actual_material_rate"/>
+                                        <field name="actual_material_amount" sum="Total"/>
+                                        <field name="actual_labor_amount" sum="Total"/>
+                                        <field name="actual_subcontractor_amount" sum="Total"/>
+                                        <field name="total_actual_cost" sum="Total"/>
+                                        <field name="budget_saving" sum="Total" invisible="1"/>
+                                        <field name="actual_saving" sum="Total" invisible="1"/>
                                     </tree>
                                 </field>
                             </page>
@@ -55,6 +76,7 @@
                     <field name="date"/>
                     <field name="analytic_account_id"/>
                     <field name="manager_id"/>
+		    <field name="net_cost_amount"/>
                     <field name="budget_cost_amount"/>
                     <field name="actual_cost_amount"/>
                 </tree>

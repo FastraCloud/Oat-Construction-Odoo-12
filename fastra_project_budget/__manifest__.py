@@ -21,6 +21,7 @@
         'views/fastra_material_summary.xml',
         'views/fastra_preliminaries.xml',
         'views/fastra_project_measure_unit.xml',
+        'views/cost_code_dictionary.xml',
     ],
     'installable': True,
     'auto_install': False,

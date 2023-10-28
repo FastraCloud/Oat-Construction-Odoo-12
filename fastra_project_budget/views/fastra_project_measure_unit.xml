@@ -13,14 +13,14 @@
         </record>
 
         <record id="fastra_project_budget_measure_unit_act_window" model="ir.actions.act_window">
-            <field name="name">Fastra measure unit</field>
+            <field name="name">Unit of Measure</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">fastra.project.budget.measure.unit</field>
             <field name="view_type">form</field>
             <field name="view_mode">tree</field>
         </record>
 
-        <menuitem name="Fastra project budget measure unit"
+        <menuitem name="Unit of Measure"
                   id="fastra_project_budget_measure_unit_menu"
                   parent="fastra_project_budget.master_data_menu_root"
                   action="fastra_project_budget_measure_unit_act_window" sequence="50"/>
